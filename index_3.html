@@ -246,15 +246,39 @@
       .about-images { order: -1; }
       .about-cards { grid-template-columns: 1fr; }
       .about-img-card { height: 280px; }
-      .process { padding: 60px 0 80px; }
-      .process-viewer { aspect-ratio: 3 / 4; }
-      .process-tabs { gap: 0; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 24px; }
-      .process-tabs::-webkit-scrollbar { display: none; }
-      .process-tab { flex-shrink: 0; padding: 10px 16px; }
-      .tab-name { display: none; }
-      .slide-overlay { background: linear-gradient(to top, rgba(3,33,8,0.97) 0%, rgba(3,33,8,0.8) 45%, rgba(3,33,8,0.3) 100%); }
-      .slide-content { align-items: flex-end; padding: 0 24px 120px; }
-      .slide-nav { bottom: 20px; right: 20px; }
+      .process { padding: 48px 0 60px; }
+      .process-tabs { display: none; }
+      .slide-nav { display: none; }
+      .process-viewer {
+        display: flex;
+        overflow-x: scroll;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        height: auto;
+        border-radius: 12px;
+      }
+      .process-viewer::-webkit-scrollbar { display: none; }
+      .process-slide {
+        position: relative;
+        flex-shrink: 0;
+        width: 100%;
+        height: auto;
+        opacity: 1;
+        pointer-events: auto;
+        display: flex;
+        flex-direction: column;
+        transition: none;
+      }
+      .process-slide picture { position: relative; inset: auto; display: block; height: 240px; }
+      .process-slide .slide-img { position: relative; inset: auto; height: 240px; transition: none; transform: none !important; }
+      .slide-pattern { display: none; }
+      .slide-overlay { display: none; }
+      .slide-content { position: relative; inset: auto; background: #021f05; padding: 24px; align-items: flex-start; }
+      .slide-text { max-width: 100%; text-shadow: none; }
+      .slide-num { font-size: 2rem; color: rgba(46,173,62,0.25); margin-bottom: 4px; letter-spacing: -1px; }
+      .slide-title { font-size: 1.1rem; margin-bottom: 10px; }
+      .slide-desc { font-size: 0.85rem; max-width: 100%; }
       .prod-hero-inner { grid-template-columns: 1fr; min-height: auto; }
       .prod-hero-img { min-height: 280px; }
       .prod-hero-text { padding: 40px 24px; }
@@ -604,13 +628,28 @@
     function next() { goTo((current + 1) % slides.length); }
     function prev() { goTo((current - 1 + slides.length) % slides.length); }
     tabs.forEach(tab => tab.addEventListener('click', () => goTo(parseInt(tab.dataset.step))));
-    document.getElementById('nextSlide').addEventListener('click', next);
-    document.getElementById('prevSlide').addEventListener('click', prev);
-    let touchStartX = 0;
     const viewer = document.getElementById('processViewer');
-    viewer.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
-    viewer.addEventListener('touchend', e => { const diff = touchStartX - e.changedTouches[0].screenX; if (Math.abs(diff) > 50) diff > 0 ? next() : prev(); }, { passive: true });
-    document.addEventListener('keydown', e => { if (e.key === 'ArrowRight') next(); if (e.key === 'ArrowLeft') prev(); });
+    if (window.innerWidth > 768) {
+      document.getElementById('nextSlide').addEventListener('click', next);
+      document.getElementById('prevSlide').addEventListener('click', prev);
+      let touchStartX = 0;
+      viewer.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+      viewer.addEventListener('touchend', e => { const diff = touchStartX - e.changedTouches[0].screenX; if (Math.abs(diff) > 50) diff > 0 ? next() : prev(); }, { passive: true });
+      document.addEventListener('keydown', e => { if (e.key === 'ArrowRight') next(); if (e.key === 'ArrowLeft') prev(); });
+    } else {
+      const peekObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            peekObserver.disconnect();
+            setTimeout(() => {
+              viewer.scrollTo({ left: 72, behavior: 'smooth' });
+              setTimeout(() => viewer.scrollTo({ left: 0, behavior: 'smooth' }), 700);
+            }, 500);
+          }
+        });
+      }, { threshold: 0.6 });
+      peekObserver.observe(viewer);
+    }
 
     const heroBg = document.querySelector('.hero-bg');
     window.addEventListener('scroll', () => { heroBg.style.transform = `translateY(${window.pageYOffset * 0.4}px)`; }, { passive: true });
